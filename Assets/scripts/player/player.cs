@@ -1,11 +1,14 @@
 using UnityEngine;
 using DG.Tweening;
 
-public class Player : MonoBehaviour
+public class player : MonoBehaviour
 {
     [Header("References")]
     public Rigidbody2D myRigidBody;
     public Transform visual;
+    public Transform groundCheck;
+    public LayerMask groundLayer;
+    public float groundCheckRadius = 0.1f;
 
     [Header("Movement Settings")]
     public float walkSpeed = 5f;
@@ -15,16 +18,65 @@ public class Player : MonoBehaviour
     [Header("Jump Settings")]
     public float jumpForce = 8f;
 
+    [Header("Jump Buffer Settings")]
+    public float jumpBufferTime = 0.1f;
+    public float coyoteTime = 0.1f;
+
     [Header("Visual FX Settings")]
     public float scaleLerpSpeed = 10f;
     public float tiltAngle = 15f;
     public float maxVerticalSpeedForEffects = 10f;
 
     private float _currentSpeed;
+    private Vector3 originalScale;
+    private int facingDirection = 1;
+    private Animator _animator;
+    private bool isGrounded;
+    private bool isJumping;
+    private bool isFalling;
+
+    private float jumpBufferCounter;
+    private float coyoteTimeCounter;
+
+    void Start()
+    {
+        if (visual != null)
+        {
+            originalScale = visual.localScale;
+            _animator = visual.GetComponent<Animator>();
+            if (_animator == null)
+                Debug.LogWarning("Animator component not found on visual GameObject.");
+        }
+        else
+        {
+            Debug.LogWarning("Visual transform is not assigned.");
+        }
+    }
 
     void Update()
     {
+        isGrounded = CheckIfGrounded();
+
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            jumpBufferCounter = jumpBufferTime;
+        }
+        else
+        {
+            jumpBufferCounter -= Time.deltaTime;
+        }
+
+        if (isGrounded)
+        {
+            coyoteTimeCounter = coyoteTime;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
+        }
+
         HandleInput();
+        UpdateAnimatorParams();
         UpdateVisualEffects();
     }
 
@@ -40,28 +92,72 @@ public class Player : MonoBehaviour
 
         if (Input.GetKey(KeyCode.LeftArrow))
         {
-            myRigidBody.velocity = new Vector2(-_currentSpeed, myRigidBody.velocity.y);
+            myRigidBody.linearVelocity = new Vector2(-_currentSpeed, myRigidBody.linearVelocity.y);
+            facingDirection = -1;
         }
         else if (Input.GetKey(KeyCode.RightArrow))
         {
-            myRigidBody.velocity = new Vector2(_currentSpeed, myRigidBody.velocity.y);
+            myRigidBody.linearVelocity = new Vector2(_currentSpeed, myRigidBody.linearVelocity.y);
+            facingDirection = 1;
+        }
+        else
+        {
+            float newX = Mathf.MoveTowards(myRigidBody.linearVelocity.x, 0, Mathf.Abs(friction.x));
+            myRigidBody.linearVelocity = new Vector2(newX, myRigidBody.linearVelocity.y);
         }
 
-        if (myRigidBody.velocity.x > 0)
+        if (_animator != null)
         {
-            myRigidBody.velocity += friction;
-        }
-        else if (myRigidBody.velocity.x < 0)
-        {
-            myRigidBody.velocity -= friction;
+            _animator.SetBool("isMoving", Mathf.Abs(myRigidBody.linearVelocity.x) > 0.1f);
         }
     }
 
     private void HandleJumpInput()
     {
-        if (Input.GetKeyDown(KeyCode.Z))
+        if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
         {
-            myRigidBody.velocity = Vector2.up * jumpForce;
+            myRigidBody.linearVelocity = new Vector2(myRigidBody.linearVelocity.x, jumpForce);
+            jumpBufferCounter = 0f;
+            coyoteTimeCounter = 0f;
+        }
+    }
+
+    private void UpdateAnimatorParams()
+    {
+        float verticalVelocity = myRigidBody.linearVelocity.y;
+
+        if (!isGrounded)
+        {
+            if (verticalVelocity > 0.1f)
+            {
+                isJumping = true;
+                isFalling = false;
+                if (_animator != null)
+                {
+                    _animator.SetBool("isJumping", true);
+                    _animator.SetBool("isFalling", false);
+                }
+            }
+            else if (verticalVelocity < -0.1f)
+            {
+                isJumping = false;
+                isFalling = true;
+                if (_animator != null)
+                {
+                    _animator.SetBool("isJumping", false);
+                    _animator.SetBool("isFalling", true);
+                }
+            }
+        }
+        else
+        {
+            isJumping = false;
+            isFalling = false;
+            if (_animator != null)
+            {
+                _animator.SetBool("isJumping", false);
+                _animator.SetBool("isFalling", false);
+            }
         }
     }
 
@@ -69,18 +165,52 @@ public class Player : MonoBehaviour
     {
         if (visual == null) return;
 
-        float verticalSpeed = myRigidBody.velocity.y;
-        float horizontalSpeed = myRigidBody.velocity.x;
+        float verticalSpeed = myRigidBody.linearVelocity.y;
 
-        float normalizedSpeed = Mathf.Clamp01(Mathf.Abs(verticalSpeed) / maxVerticalSpeedForEffects);
-        float targetScaleY = Mathf.Lerp(1.0f, 1.4f, normalizedSpeed);
-        float targetScaleX = Mathf.Lerp(1.0f, 0.6f, normalizedSpeed);
-        Vector3 targetScale = new Vector3(targetScaleX, targetScaleY, 1f);
-        visual.localScale = Vector3.Lerp(visual.localScale, targetScale, Time.deltaTime * scaleLerpSpeed);
+        if (isJumping || isFalling)
+        {
+            visual.localScale = new Vector3(
+                Mathf.Abs(originalScale.x) * facingDirection,
+                originalScale.y,
+                originalScale.z
+            );
+        }
+        else
+        {
+            float normalizedSpeed = Mathf.Clamp01(Mathf.Abs(verticalSpeed) / maxVerticalSpeedForEffects);
+            float scaleY = Mathf.Lerp(1.0f, 1.8f, normalizedSpeed);
+            float scaleX = Mathf.Lerp(1.0f, 0.3f, normalizedSpeed);
 
-        float tiltDirection = Mathf.Sign(horizontalSpeed) != 0 ? Mathf.Sign(horizontalSpeed) : 1;
+            Vector3 targetScale = new Vector3(
+                originalScale.x * scaleX * facingDirection,
+                originalScale.y * scaleY,
+                originalScale.z
+            );
+
+            visual.localScale = Vector3.Lerp(visual.localScale, targetScale, Time.deltaTime * scaleLerpSpeed);
+        }
+
+        float tiltDirection = facingDirection;
         float targetAngle = Mathf.Clamp(-verticalSpeed * 2f * tiltDirection, -tiltAngle, tiltAngle);
         Quaternion targetRotation = Quaternion.Euler(0, 0, targetAngle);
         visual.rotation = Quaternion.Lerp(visual.rotation, targetRotation, Time.deltaTime * scaleLerpSpeed);
+
+        Vector3 fixedScale = visual.localScale;
+        fixedScale.x = Mathf.Abs(fixedScale.x) * facingDirection;
+        visual.localScale = fixedScale;
+    }
+
+    private bool CheckIfGrounded()
+    {
+        return Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+    }
+
+    private void OnDrawGizmosSelected()
+    {
+        if (groundCheck != null)
+        {
+            Gizmos.color = Color.red;
+            Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
+        }
     }
 }
