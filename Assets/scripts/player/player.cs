@@ -29,7 +29,7 @@ public class player : MonoBehaviour
 
     private float _currentSpeed;
     private Vector3 originalScale;
-    private int facingDirection = 1;
+    public int facingDirection = 1;
     private Animator _animator;
     private bool isGrounded;
     private bool isJumping;
@@ -37,6 +37,8 @@ public class player : MonoBehaviour
 
     private float jumpBufferCounter;
     private float coyoteTimeCounter;
+
+    private HealthBase _healthBase;
 
     void Start()
     {
