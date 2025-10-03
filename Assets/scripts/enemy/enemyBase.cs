@@ -2,7 +2,9 @@ using UnityEngine;
 
 public class enemyBase : MonoBehaviour
 {
-    public int damage=10;
+    public int damage = 10;
+    public Animator animator;
+    public string triggerAttack = "attack";
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
@@ -11,6 +13,12 @@ public class enemyBase : MonoBehaviour
         if (health != null)
         {
             health.Damage(damage);
+            PlayAttackAnimation();
         }
+    }
+
+    private void PlayAttackAnimation()
+    {
+        animator.SetTrigger(triggerAttack);
     }
 }
