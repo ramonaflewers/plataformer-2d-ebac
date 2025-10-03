@@ -14,7 +14,8 @@ GameObject:
   - component: {fileID: 6228376496013777585}
   - component: {fileID: 5550651611778947952}
   - component: {fileID: 261393074171110277}
-  - component: {fileID: 4525268025112242628}
+  - component: {fileID: 798054160995009767}
+  - component: {fileID: 7348455880431838953}
   m_Layer: 0
   m_Name: PFB_enemy
   m_TagString: Untagged
@@ -127,13 +128,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   damage: 10
+  speed: 5
+  attackRange: 1.2
+  attackCooldown: 1.5
   animator: {fileID: 9221631010922254499}
-  triggerWalk: walk
   triggerAttack: attack
   triggerDeath: death
-  playerTransform: {fileID: 0}
-  detectionDistance: 5
-  moveSpeed: 3
+  triggerWalk: walk
+  healthBase: {fileID: 0}
 --- !u!61 &5550651611778947952
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -207,7 +209,7 @@ Rigidbody2D:
   m_SleepingMode: 1
   m_CollisionDetection: 0
   m_Constraints: 0
---- !u!114 &4525268025112242628
+--- !u!114 &798054160995009767
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -216,9 +218,26 @@ MonoBehaviour:
   m_GameObject: {fileID: 1218719826872596604}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7bcac977c7d505646b4fda695eb569fe, type: 3}
+  m_Script: {fileID: 11500000, guid: 2c79eb4f6e9b73241b579b3bc684c9aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  playerTransform: {fileID: 0}
-  detectionDistance: 10
-  moveSpeed: 3
+  startingHealth: 10
+  DestroyOnDeath: 1
+  DelayToDestroy: 2
+  _flashColor: {fileID: 7348455880431838953}
+--- !u!114 &7348455880431838953
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1218719826872596604}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1624f7c3ecfeea4fbb7bc21c6b994f7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  spriteRenderers:
+  - {fileID: 1590328239315207485}
+  color: {r: 1, g: 0, b: 0, a: 1}
+  duration: 0.1

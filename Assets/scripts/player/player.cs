@@ -22,6 +22,10 @@ public class player : MonoBehaviour
     public float jumpBufferTime = 0.1f;
     public float coyoteTime = 0.1f;
 
+    [Header("Double Jump Settings")]
+    public int maxJumpCount = 2;
+    private int currentJumpCount;
+
     [Header("Visual FX Settings")]
     public float scaleLerpSpeed = 10f;
     public float tiltAngle = 15f;
@@ -46,18 +50,17 @@ public class player : MonoBehaviour
         {
             originalScale = visual.localScale;
             _animator = visual.GetComponent<Animator>();
-            if (_animator == null)
-                Debug.LogWarning("Animator component not found on visual GameObject.");
-        }
-        else
-        {
-            Debug.LogWarning("Visual transform is not assigned.");
         }
     }
 
     void Update()
     {
         isGrounded = CheckIfGrounded();
+
+        if (isGrounded)
+        {
+            currentJumpCount = 0;
+        }
 
         if (Input.GetKeyDown(KeyCode.Z))
         {
@@ -88,39 +91,68 @@ public class player : MonoBehaviour
         HandleJumpInput();
     }
 
-    private void HandleMovementInput()
+private void HandleMovementInput()
+{
+    _currentSpeed = Input.GetKey(KeyCode.X) ? runSpeed : walkSpeed;
+
+    if (Input.GetKey(KeyCode.LeftArrow))
     {
-        _currentSpeed = Input.GetKey(KeyCode.X) ? runSpeed : walkSpeed;
-
-        if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            myRigidBody.linearVelocity = new Vector2(-_currentSpeed, myRigidBody.linearVelocity.y);
-            facingDirection = -1;
-        }
-        else if (Input.GetKey(KeyCode.RightArrow))
-        {
-            myRigidBody.linearVelocity = new Vector2(_currentSpeed, myRigidBody.linearVelocity.y);
-            facingDirection = 1;
-        }
-        else
-        {
-            float newX = Mathf.MoveTowards(myRigidBody.linearVelocity.x, 0, Mathf.Abs(friction.x));
-            myRigidBody.linearVelocity = new Vector2(newX, myRigidBody.linearVelocity.y);
-        }
-
-        if (_animator != null)
-        {
-            _animator.SetBool("isMoving", Mathf.Abs(myRigidBody.linearVelocity.x) > 0.1f);
-        }
+        myRigidBody.linearVelocity = new Vector2(-_currentSpeed, myRigidBody.linearVelocity.y);
+        facingDirection = -1;
     }
+    else if (Input.GetKey(KeyCode.RightArrow))
+    {
+        myRigidBody.linearVelocity = new Vector2(_currentSpeed, myRigidBody.linearVelocity.y);
+        facingDirection = 1;
+    }
+    else
+    {
+        float newX = Mathf.MoveTowards(myRigidBody.linearVelocity.x, 0, Mathf.Abs(friction.x));
+        myRigidBody.linearVelocity = new Vector2(newX, myRigidBody.linearVelocity.y);
+    }
+
+    if (_animator != null)
+    {
+        float horizontalSpeed = Mathf.Abs(myRigidBody.linearVelocity.x);
+        _animator.SetBool("isMoving", horizontalSpeed > 0.1f);
+
+        _animator.speed = horizontalSpeed >= runSpeed - 0.1f ? 1.5f : 1f;
+    }
+
+    SpriteRenderer spriteRenderer = visual.GetComponent<SpriteRenderer>();
+    if (spriteRenderer != null)
+    {
+        spriteRenderer.flipX = facingDirection == -1;
+    }
+}
+
+
 
     private void HandleJumpInput()
     {
-        if (jumpBufferCounter > 0f && coyoteTimeCounter > 0f)
+        bool jumpPressed = jumpBufferCounter > 0f;
+
+        if (jumpPressed && (isGrounded || coyoteTimeCounter > 0f) && currentJumpCount == 0)
         {
-            myRigidBody.linearVelocity = new Vector2(myRigidBody.linearVelocity.x, jumpForce);
-            jumpBufferCounter = 0f;
-            coyoteTimeCounter = 0f;
+            Jump();
+        }
+        else if (jumpPressed && currentJumpCount < maxJumpCount && !isGrounded)
+        {
+            Jump();
+        }
+    }
+
+    private void Jump()
+    {
+        myRigidBody.linearVelocity = new Vector2(myRigidBody.linearVelocity.x, jumpForce);
+        jumpBufferCounter = 0f;
+        coyoteTimeCounter = 0f;
+        currentJumpCount++;
+
+        if (_animator != null)
+        {
+            _animator.SetBool("isJumping", true);
+            _animator.SetBool("isFalling", false);
         }
     }
 
@@ -132,8 +164,6 @@ public class player : MonoBehaviour
         {
             if (verticalVelocity > 0.1f)
             {
-                isJumping = true;
-                isFalling = false;
                 if (_animator != null)
                 {
                     _animator.SetBool("isJumping", true);
@@ -142,8 +172,6 @@ public class player : MonoBehaviour
             }
             else if (verticalVelocity < -0.1f)
             {
-                isJumping = false;
-                isFalling = true;
                 if (_animator != null)
                 {
                     _animator.SetBool("isJumping", false);
@@ -153,8 +181,6 @@ public class player : MonoBehaviour
         }
         else
         {
-            isJumping = false;
-            isFalling = false;
             if (_animator != null)
             {
                 _animator.SetBool("isJumping", false);

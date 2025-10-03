@@ -22,11 +22,11 @@ public class GunBase : MonoBehaviour
             TryShoot();
         }
 
-        if (Input.GetKey(KeyCode.S) && _currentCoroutine == null)
+        if (Input.GetKey(KeyCode.C) && _currentCoroutine == null)
         {
             _currentCoroutine = StartCoroutine(AutoShoot());
         }
-        else if (Input.GetKeyUp(KeyCode.S) && _currentCoroutine != null)
+        else if (Input.GetKeyUp(KeyCode.C) && _currentCoroutine != null)
         {
             StopCoroutine(_currentCoroutine);
             _currentCoroutine = null;
