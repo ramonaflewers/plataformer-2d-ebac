@@ -19,5 +19,4 @@ public class collectableBase : MonoBehaviour
     }
 
     protected virtual void onCollect() { }
-    
 }

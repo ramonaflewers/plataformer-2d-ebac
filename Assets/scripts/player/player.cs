@@ -10,27 +10,10 @@ public class player : MonoBehaviour
     public LayerMask groundLayer;
     public float groundCheckRadius = 0.1f;
 
-    [Header("Movement Settings")]
-    public float walkSpeed = 5f;
-    public float runSpeed = 8f;
-    public Vector2 friction = new Vector2(-1f, 0);
+    [Header("Config")]
+    public PlayerConfig config;
 
-    [Header("Jump Settings")]
-    public float jumpForce = 8f;
-
-    [Header("Jump Buffer Settings")]
-    public float jumpBufferTime = 0.1f;
-    public float coyoteTime = 0.1f;
-
-    [Header("Double Jump Settings")]
-    public int maxJumpCount = 2;
     private int currentJumpCount;
-
-    [Header("Visual FX Settings")]
-    public float scaleLerpSpeed = 10f;
-    public float tiltAngle = 15f;
-    public float maxVerticalSpeedForEffects = 10f;
-
     private float _currentSpeed;
     private Vector3 originalScale;
     public int facingDirection = 1;
@@ -42,9 +25,7 @@ public class player : MonoBehaviour
     private float jumpBufferCounter;
     private float coyoteTimeCounter;
 
-    private HealthBase _healthBase;
-
-    void Start()
+    private void Start()
     {
         if (visual != null)
         {
@@ -53,7 +34,7 @@ public class player : MonoBehaviour
         }
     }
 
-    void Update()
+    private void Update()
     {
         isGrounded = CheckIfGrounded();
 
@@ -64,7 +45,7 @@ public class player : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.Z))
         {
-            jumpBufferCounter = jumpBufferTime;
+            jumpBufferCounter = config.jumpBufferTime;
         }
         else
         {
@@ -73,7 +54,7 @@ public class player : MonoBehaviour
 
         if (isGrounded)
         {
-            coyoteTimeCounter = coyoteTime;
+            coyoteTimeCounter = config.coyoteTime;
         }
         else
         {
@@ -91,42 +72,40 @@ public class player : MonoBehaviour
         HandleJumpInput();
     }
 
-private void HandleMovementInput()
-{
-    _currentSpeed = Input.GetKey(KeyCode.X) ? runSpeed : walkSpeed;
-
-    if (Input.GetKey(KeyCode.LeftArrow))
+    private void HandleMovementInput()
     {
-        myRigidBody.linearVelocity = new Vector2(-_currentSpeed, myRigidBody.linearVelocity.y);
-        facingDirection = -1;
-    }
-    else if (Input.GetKey(KeyCode.RightArrow))
-    {
-        myRigidBody.linearVelocity = new Vector2(_currentSpeed, myRigidBody.linearVelocity.y);
-        facingDirection = 1;
-    }
-    else
-    {
-        float newX = Mathf.MoveTowards(myRigidBody.linearVelocity.x, 0, Mathf.Abs(friction.x));
-        myRigidBody.linearVelocity = new Vector2(newX, myRigidBody.linearVelocity.y);
-    }
+        _currentSpeed = Input.GetKey(KeyCode.X) ? config.runSpeed : config.walkSpeed;
 
-    if (_animator != null)
-    {
-        float horizontalSpeed = Mathf.Abs(myRigidBody.linearVelocity.x);
-        _animator.SetBool("isMoving", horizontalSpeed > 0.1f);
+        if (Input.GetKey(KeyCode.LeftArrow))
+        {
+            myRigidBody.linearVelocity = new Vector2(-_currentSpeed, myRigidBody.linearVelocity.y);
+            facingDirection = -1;
+        }
+        else if (Input.GetKey(KeyCode.RightArrow))
+        {
+            myRigidBody.linearVelocity = new Vector2(_currentSpeed, myRigidBody.linearVelocity.y);
+            facingDirection = 1;
+        }
+        else
+        {
+            float newX = Mathf.MoveTowards(myRigidBody.linearVelocity.x, 0, Mathf.Abs(config.friction.x));
+            myRigidBody.linearVelocity = new Vector2(newX, myRigidBody.linearVelocity.y);
+        }
 
-        _animator.speed = horizontalSpeed >= runSpeed - 0.1f ? 1.5f : 1f;
+        if (_animator != null)
+        {
+            float horizontalSpeed = Mathf.Abs(myRigidBody.linearVelocity.x);
+            _animator.SetBool("isMoving", horizontalSpeed > 0.1f);
+
+            _animator.speed = horizontalSpeed >= config.runSpeed - 0.1f ? 1.5f : 1f;
+        }
+
+        var spriteRenderer = visual.GetComponent<SpriteRenderer>();
+        if (spriteRenderer != null)
+        {
+            spriteRenderer.flipX = facingDirection == -1;
+        }
     }
-
-    SpriteRenderer spriteRenderer = visual.GetComponent<SpriteRenderer>();
-    if (spriteRenderer != null)
-    {
-        spriteRenderer.flipX = facingDirection == -1;
-    }
-}
-
-
 
     private void HandleJumpInput()
     {
@@ -136,7 +115,7 @@ private void HandleMovementInput()
         {
             Jump();
         }
-        else if (jumpPressed && currentJumpCount < maxJumpCount && !isGrounded)
+        else if (jumpPressed && currentJumpCount < config.maxJumpCount && !isGrounded)
         {
             Jump();
         }
@@ -144,7 +123,7 @@ private void HandleMovementInput()
 
     private void Jump()
     {
-        myRigidBody.linearVelocity = new Vector2(myRigidBody.linearVelocity.x, jumpForce);
+        myRigidBody.linearVelocity = new Vector2(myRigidBody.linearVelocity.x, config.jumpForce);
         jumpBufferCounter = 0f;
         coyoteTimeCounter = 0f;
         currentJumpCount++;
@@ -205,7 +184,7 @@ private void HandleMovementInput()
         }
         else
         {
-            float normalizedSpeed = Mathf.Clamp01(Mathf.Abs(verticalSpeed) / maxVerticalSpeedForEffects);
+            float normalizedSpeed = Mathf.Clamp01(Mathf.Abs(verticalSpeed) / config.maxVerticalSpeedForEffects);
             float scaleY = Mathf.Lerp(1.0f, 1.8f, normalizedSpeed);
             float scaleX = Mathf.Lerp(1.0f, 0.3f, normalizedSpeed);
 
@@ -215,13 +194,13 @@ private void HandleMovementInput()
                 originalScale.z
             );
 
-            visual.localScale = Vector3.Lerp(visual.localScale, targetScale, Time.deltaTime * scaleLerpSpeed);
+            visual.localScale = Vector3.Lerp(visual.localScale, targetScale, Time.deltaTime * config.scaleLerpSpeed);
         }
 
         float tiltDirection = facingDirection;
-        float targetAngle = Mathf.Clamp(-verticalSpeed * 2f * tiltDirection, -tiltAngle, tiltAngle);
+        float targetAngle = Mathf.Clamp(-verticalSpeed * 2f * tiltDirection, -config.tiltAngle, config.tiltAngle);
         Quaternion targetRotation = Quaternion.Euler(0, 0, targetAngle);
-        visual.rotation = Quaternion.Lerp(visual.rotation, targetRotation, Time.deltaTime * scaleLerpSpeed);
+        visual.rotation = Quaternion.Lerp(visual.rotation, targetRotation, Time.deltaTime * config.scaleLerpSpeed);
 
         Vector3 fixedScale = visual.localScale;
         fixedScale.x = Mathf.Abs(fixedScale.x) * facingDirection;

@@ -136,6 +136,8 @@ MonoBehaviour:
   triggerDeath: death
   triggerWalk: walk
   healthBase: {fileID: 0}
+  visual: {fileID: 0}
+  rb: {fileID: 0}
 --- !u!61 &5550651611778947952
 BoxCollider2D:
   m_ObjectHideFlags: 0
@@ -208,7 +210,7 @@ Rigidbody2D:
   m_Interpolate: 0
   m_SleepingMode: 1
   m_CollisionDetection: 0
-  m_Constraints: 0
+  m_Constraints: 4
 --- !u!114 &798054160995009767
 MonoBehaviour:
   m_ObjectHideFlags: 0
