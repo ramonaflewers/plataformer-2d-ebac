@@ -19,6 +19,10 @@ public class player : MonoBehaviour
     private Animator _animator;
     private bool isGrounded;
 
+    [Header("VFX")]
+    public ParticleSystem moveVFX;
+    public ParticleSystem jumpVFX;
+
     private float jumpBufferCounter;
     private float coyoteTimeCounter;
     private float currentSpeedMultiplier = 0f;
@@ -55,12 +59,12 @@ public class player : MonoBehaviour
         {
             coyoteTimeCounter = config.coyoteTime;
 
-            // Evita "travamento" zerando a velocidade vertical só quando estiver caindo ou quase parando
-            if (myRigidBody.linearVelocity.y < 0.1f)
+            if (myRigidBody.linearVelocity.y <= 0f)
             {
                 Vector2 vel = myRigidBody.linearVelocity;
                 vel.y = 0f;
                 myRigidBody.linearVelocity = vel;
+                SnapPlayerToGround();
             }
         }
         else
@@ -73,6 +77,23 @@ public class player : MonoBehaviour
         HandleInput();
         UpdateAnimatorParams();
         UpdateVisualEffects();
+        UpdateMoveVFX();
+    }
+
+    private void SnapPlayerToGround()
+    {
+        RaycastHit2D hit = Physics2D.Raycast(groundCheck.position, Vector2.down, groundCheckRadius * 2f, groundLayer);
+        if (hit.collider != null)
+        {
+            Vector3 pos = transform.position;
+            float playerBottomY = groundCheck.position.y - groundCheckRadius;
+            float distanceToGround = playerBottomY - hit.point.y;
+            if (distanceToGround > 0f)
+            {
+                pos.y -= distanceToGround;
+                transform.position = pos;
+            }
+        }
     }
 
     private void HandleInput()
@@ -117,10 +138,13 @@ public class player : MonoBehaviour
             float horizontalSpeed = Mathf.Abs(myRigidBody.linearVelocity.x);
             _animator.SetBool("isMoving", horizontalSpeed > 0.1f);
             _animator.speed = currentSpeedMultiplier > 0.9f ? 1.5f : 1f;
+
+            bool isRunningAnim = isGrounded && horizontalSpeed >= (config.runSpeed - config.runAnimationThreshold);
+            _animator.SetBool("IsRunning", isRunningAnim);
         }
 
         var spriteRenderer = visual.GetComponent<SpriteRenderer>();
-        if (spriteRenderer != null && isGrounded == true)
+        if (spriteRenderer != null && isGrounded)
         {
             spriteRenderer.flipX = facingDirection == -1;
         }
@@ -133,6 +157,7 @@ public class player : MonoBehaviour
         if (jumpPressed && (isGrounded || coyoteTimeCounter > 0f))
         {
             Jump();
+            JumpVFX();
         }
     }
 
@@ -147,6 +172,11 @@ public class player : MonoBehaviour
             _animator.SetBool("isJumping", true);
             _animator.SetBool("isFalling", false);
         }
+    }
+
+    private void JumpVFX()
+    {
+        if (jumpVFX != null) jumpVFX.Play();
     }
 
     private void ApplyCustomGravity()
@@ -213,6 +243,22 @@ public class player : MonoBehaviour
         Vector3 fixedScale = visual.localScale;
         fixedScale.x = Mathf.Abs(fixedScale.x) * facingDirection;
         visual.localScale = fixedScale;
+    }
+
+    private void UpdateMoveVFX()
+    {
+        if (moveVFX == null) return;
+
+        bool shouldPlay = isGrounded && Mathf.Abs(myRigidBody.linearVelocity.x) > 0.1f;
+
+        if (shouldPlay && !moveVFX.isPlaying)
+        {
+            moveVFX.Play();
+        }
+        else if (!shouldPlay && moveVFX.isPlaying)
+        {
+            moveVFX.Stop();
+        }
     }
 
     private bool CheckIfGrounded()

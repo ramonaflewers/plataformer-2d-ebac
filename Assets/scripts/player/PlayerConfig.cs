@@ -16,10 +16,13 @@ public class PlayerConfig : ScriptableObject
     public float runAccelerationTime = 0.4f;
     public float runDecelerationTime = 0.3f;
 
+    public float runAnimationThreshold = 0.1f;
+
+
     [Header("Jump Settings")]
     public float jumpForce = 10f;
-    public float fallGravityMultiplier = 2.5f;       // Gravidade extra quando está caindo
-    public float lowJumpGravityMultiplier = 2f;      // Gravidade extra se soltar o pulo cedo
+    public float fallGravityMultiplier = 2.5f;
+    public float lowJumpGravityMultiplier = 2f;
 
     [Header("Jump Buffer")]
     public float jumpBufferTime = 0.1f;

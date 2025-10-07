@@ -16,12 +16,13 @@ MonoBehaviour:
   runSpeed: 15
   friction: {x: -1, y: 0}
   groundAcceleration: 60
-  airAcceleration: 50
+  airAcceleration: 30
   runAccelerationTime: 0.4
   runDecelerationTime: 0.3
+  runAnimationThreshold: 0.1
   jumpForce: 20
   fallGravityMultiplier: 2.5
-  lowJumpGravityMultiplier: 6
+  lowJumpGravityMultiplier: 7
   jumpBufferTime: 0.1
   coyoteTime: 0.1
   scaleLerpSpeed: 10
