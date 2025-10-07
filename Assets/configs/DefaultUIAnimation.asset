@@ -15,3 +15,14 @@ MonoBehaviour:
   duration: 0.2
   delay: 0.05
   ease: 27
+  collectScaleUp: 1.3
+  collectScaleUpDuration: 0.2
+  collectEaseUp: 27
+  collectScaleDownDuration: 0.2
+  collectEaseDown: 26
+  coinAddDelay: 0.05
+  flashDuration: 0.2
+  flashColor: {r: 1, g: 1, b: 1, a: 1}
+  punchScale: {x: 0, y: 0, z: 0}
+  punchVibrato: 0
+  punchElasticity: 0

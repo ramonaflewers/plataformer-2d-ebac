@@ -12,13 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: df077afaa92ff7340ba5dd3b5c8bb703, type: 3}
   m_Name: DefaultPlayerConfig
   m_EditorClassIdentifier: 
-  walkSpeed: 5
-  runSpeed: 8
+  walkSpeed: 10
+  runSpeed: 15
   friction: {x: -1, y: 0}
-  jumpForce: 8
+  groundAcceleration: 60
+  airAcceleration: 50
+  runAccelerationTime: 0.4
+  runDecelerationTime: 0.3
+  jumpForce: 20
+  fallGravityMultiplier: 2.5
+  lowJumpGravityMultiplier: 6
   jumpBufferTime: 0.1
   coyoteTime: 0.1
-  maxJumpCount: 2
   scaleLerpSpeed: 10
   tiltAngle: 15
   maxVerticalSpeedForEffects: 10
