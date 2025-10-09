@@ -7,24 +7,18 @@ public class HealthBase : MonoBehaviour
     public int startingHealth = 10;
     private int _currentHealth;
     private bool _isDead = false;
-    public bool DestroyOnDeath = false;
-    public float DelayToDestroy = 2f;
+    public bool DestroyOnDeath = true;
+    public float DelayToDestroy = 0f;
 
     [SerializeField] private FlashColor _flashColor;
 
     private void Awake()
     {
-        init();
-        if (_flashColor == null)
-        {
-            _flashColor = GetComponent<FlashColor>();
-        }
-    }
-
-    private void init()
-    {
         _currentHealth = startingHealth;
         _isDead = false;
+
+        if (_flashColor == null)
+            _flashColor = GetComponent<FlashColor>();
     }
 
     public void Damage(int damage)
@@ -33,26 +27,21 @@ public class HealthBase : MonoBehaviour
 
         _currentHealth -= damage;
 
-        if (_currentHealth > 0)
-        {
-            if (_flashColor != null)
-            {
-                _flashColor.Flash();
-            }
-        }
-        else
-        {
-            kill();
-        }
+        if (_flashColor != null)
+            _flashColor.Flash();
+
+        if (_currentHealth <= 0)
+            Kill();
     }
 
-    private void kill()
+    public void Kill()
     {
+        if (_isDead) return;
+
         _isDead = true;
-        if (DestroyOnDeath)
-        {
-            Destroy(gameObject, DelayToDestroy);
-        }
         OnDeath?.Invoke();
+
+        if (DestroyOnDeath)
+            Destroy(gameObject, DelayToDestroy);
     }
 }

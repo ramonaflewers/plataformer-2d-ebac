@@ -22,6 +22,12 @@ public class UICoinsManager : MonoBehaviour
 
     private Color originalCoinTextColor;
 
+    [Header("Audio")]
+    public AudioSource coinAudioSource;
+    public AudioClip coinAddClip;
+    public AudioClip coinResetClip;
+
+
     private void Awake()
     {
         if (Instance == null)
@@ -58,6 +64,17 @@ public class UICoinsManager : MonoBehaviour
             coins++;
             coinBuffer--;
 
+            if (coinAudioSource != null && coinAddClip != null)
+                coinAudioSource.PlayOneShot(coinAddClip);
+
+            if (coins >= 100)
+            {
+                if (coinAudioSource != null && coinResetClip != null)
+                    coinAudioSource.PlayOneShot(coinResetClip);
+
+                coins = 1;
+            }
+
             UpdateCoinUI();
             PlayCoinTextFlash();
 
@@ -66,6 +83,7 @@ public class UICoinsManager : MonoBehaviour
 
         isProcessingCoins = false;
     }
+
 
     private void UpdateCoinUI()
     {

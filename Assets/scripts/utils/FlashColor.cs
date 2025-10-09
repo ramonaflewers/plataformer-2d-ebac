@@ -1,9 +1,11 @@
 using UnityEngine;
+using System;
 using System.Collections.Generic;
 using DG.Tweening;
 
 public class FlashColor : MonoBehaviour
 {
+    public event Action OnFlashComplete;
     public List<SpriteRenderer> spriteRenderers;
     public Color color = Color.red;
     public float duration = 3f;
@@ -37,12 +39,17 @@ public class FlashColor : MonoBehaviour
 
         _currentTweens.Clear();
 
+        Sequence sequence = DOTween.Sequence();
+
         foreach (var sr in spriteRenderers)
         {
             sr.color = Color.white;
-
             Tween tween = sr.DOColor(color, duration).SetLoops(2, LoopType.Yoyo);
             _currentTweens.Add(tween);
+            sequence.Join(tween);
         }
+
+        sequence.OnComplete(() => OnFlashComplete?.Invoke());
+        sequence.Play();
     }
 }

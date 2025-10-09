@@ -27,6 +27,23 @@ public class player : MonoBehaviour
     private float coyoteTimeCounter;
     private float currentSpeedMultiplier = 0f;
 
+    [Header("Audio Sources & Clips")]
+    public AudioSource jumpAudioSource;
+    public AudioSource moveAudioSource;
+    public AudioClip jumpClip;
+    public AudioClip slideClip;
+    public AudioClip footstepClip;
+
+    [Header("Sliding Settings")]
+    public float slideMinSpeed = 1.5f;
+
+    private bool isSliding = false;
+    private bool hasPlayedSlideSound = false;
+    private float slideAnimBufferTimer = 0f;
+    public float slideAnimDuration = 0.25f;
+
+    private float footstepTimer = 0f;
+
     private void Start()
     {
         if (visual != null)
@@ -39,6 +56,14 @@ public class player : MonoBehaviour
         {
             Debug.LogError("PlayerConfig não atribuído no inspetor!", this);
             enabled = false;
+        }
+
+        if (moveAudioSource != null)
+        {
+            moveAudioSource.clip = footstepClip;
+            moveAudioSource.loop = true;
+            moveAudioSource.volume = 0f;
+            moveAudioSource.Play();
         }
     }
 
@@ -78,6 +103,8 @@ public class player : MonoBehaviour
         UpdateAnimatorParams();
         UpdateVisualEffects();
         UpdateMoveVFX();
+        CheckSliding();
+        UpdateFootstepSounds();
     }
 
     private void SnapPlayerToGround()
@@ -157,6 +184,7 @@ public class player : MonoBehaviour
         if (jumpPressed && (isGrounded || coyoteTimeCounter > 0f))
         {
             Jump();
+            PlayJumpSound();
             JumpVFX();
         }
     }
@@ -258,6 +286,82 @@ public class player : MonoBehaviour
         else if (!shouldPlay && moveVFX.isPlaying)
         {
             moveVFX.Stop();
+        }
+    }
+
+    private void CheckSliding()
+    {
+        float horizontalSpeed = myRigidBody.linearVelocity.x;
+
+        bool holdingRight = Input.GetKey(KeyCode.RightArrow);
+        bool holdingLeft = Input.GetKey(KeyCode.LeftArrow);
+
+        bool slidingNow = false;
+
+        if (holdingRight && horizontalSpeed < -slideMinSpeed)
+            slidingNow = true;
+        else if (holdingLeft && horizontalSpeed > slideMinSpeed)
+            slidingNow = true;
+
+        if (slidingNow)
+        {
+            slideAnimBufferTimer = slideAnimDuration;
+            _animator?.SetBool("IsSliding", true);
+
+            if (!hasPlayedSlideSound && jumpAudioSource != null && slideClip != null)
+            {
+                jumpAudioSource.PlayOneShot(slideClip);
+                hasPlayedSlideSound = true;
+            }
+        }
+        else
+        {
+            if (slideAnimBufferTimer > 0f)
+            {
+                slideAnimBufferTimer -= Time.deltaTime;
+                _animator?.SetBool("IsSliding", true);
+            }
+            else
+            {
+                _animator?.SetBool("IsSliding", false);
+                hasPlayedSlideSound = false;
+            }
+        }
+
+        isSliding = slidingNow;
+    }
+
+    private void UpdateFootstepSounds()
+    {
+        if (moveAudioSource == null || footstepClip == null) return;
+
+        bool isMoving = isGrounded && Mathf.Abs(myRigidBody.linearVelocity.x) > 0.1f;
+
+        if (isMoving)
+        {
+            float moveSpeed = Mathf.Abs(myRigidBody.linearVelocity.x);
+            float interval = Mathf.Lerp(0.5f, 0.1f, Mathf.InverseLerp(config.walkSpeed, config.runSpeed, moveSpeed));
+
+            footstepTimer -= Time.deltaTime;
+
+            if (footstepTimer <= 0f)
+            {
+                moveAudioSource.pitch = 1.0f;
+                moveAudioSource.PlayOneShot(footstepClip, 0.7f);
+                footstepTimer = interval;
+            }
+        }
+        else
+        {
+            footstepTimer = 0f;
+        }
+    }
+
+    private void PlayJumpSound()
+    {
+        if (jumpAudioSource != null && jumpClip != null)
+        {
+            jumpAudioSource.PlayOneShot(jumpClip);
         }
     }
 
